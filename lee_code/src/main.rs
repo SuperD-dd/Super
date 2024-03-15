@@ -70,6 +70,15 @@ impl Solution {
     }
 }
 
+//2789
+impl Solution {
+    pub fn max_array_value(nums: Vec<i32>) -> i64 {
+        nums.into_iter()
+            .map(|x| x as i64)
+            .rfold(0, |acc, x| if x <= acc { acc + x } else { x })
+    }
+}
+
 //2824
 impl Solution {
     pub fn count_pairs(nums: Vec<i32>, target: i32) -> i32 {
@@ -219,6 +228,90 @@ impl Solution {
         }
     
         false
+    }
+}
+
+
+//2312
+use std::collections::HashMap;
+impl Solution {
+    pub fn selling_wood(m: i32, n: i32, prices: Vec<Vec<i32>>) -> i64 {
+        let mut dp = vec![vec![0; 201]; 201];
+
+        for p in prices {
+            dp[p[0] as usize][p[1] as usize] = p[2] as i64;
+        }
+
+        for i in 1..=m {
+            for j in 1..=n {
+                for k in 1..=(i as usize / 2) {
+                    dp[i as usize][j as usize] = dp[i as usize][j as usize].max(dp[k][j as usize] + dp[i as usize - k][j as usize]);
+                }
+                for k in 1..=(j as usize / 2) {
+                    dp[i as usize][j as usize] = dp[i as usize][j as usize].max(dp[i as usize][k] + dp[i as usize][j as usize - k]);
+                }
+            }
+        }
+
+        dp[m as usize][n as usize]
+    }
+
+    
+    pub fn maximize_profit(m: i32, n: i32, prices: Vec<Vec<i32>>) -> i32 {
+        let mut dp = vec![vec![0; (n + 1) as usize]; (m + 1) as usize];
+
+        for price in &prices {
+            let hi = price[0] as usize;
+            let wi = price[1] as usize;
+            let p = price[2];
+            dp[hi][wi] = p;
+        }
+        for i in 1..=m as usize {
+            for j in 1..=n as usize {
+                for k in 1..=i/2 as usize {
+                    dp[i][j] = dp[i][j].max(dp[i-k][j] + dp[k][j]);
+                }
+                for k in 1..=j/2 as usize {
+                    dp[i][j] = dp[i][j].max(dp[i][j-k] + dp[i][k]);
+                }
+            }
+        }
+        dp[m as usize][n as usize]
+    }
+
+    pub fn selling_wood1(m: i32, n: i32, prices: Vec<Vec<i32>>) -> i64 {
+        let mut value: HashMap<(i32, i32), i32> = HashMap::new();
+        let mut memo: Vec<Vec<i64>> = vec![vec![-1; (n + 1) as usize]; (m + 1) as usize];
+
+        fn dfs(x: i32, y: i32, memo: &mut Vec<Vec<i64>>, value: &HashMap<(i32, i32), i32>) -> i64 {
+            if memo[x as usize][y as usize] != -1 {
+                return memo[x as usize][y as usize];
+            }
+            let mut ret = if value.contains_key(&(x, y)) {
+                value[&(x, y)] as i64
+            } else {
+                0
+            };
+            println!("i:{},j{}",x,y);
+            if x > 1 {
+                for i in 1..x {
+                    ret = ret.max(dfs(i, y, memo, value) + dfs(x - i, y, memo, value));
+                }
+            }
+            if y > 1 {
+                for j in 1..y {
+                    ret = ret.max(dfs(x, j, memo, value) + dfs(x, y - j, memo, value));
+                }
+            }
+            memo[x as usize][y as usize] = ret;
+            println!("{:?}",memo);
+            ret
+        };
+
+        for price in prices {
+            value.insert((price[0], price[1]), price[2]);
+        }
+        dfs(m, n, &mut memo, &value)
     }
 }
 
@@ -419,6 +512,29 @@ impl Solution {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn max_array_value() {
+        let s = vec![2,3,7,9,3];
+        let result = Solution::max_array_value(s);
+        assert_eq!(result, 21);
+    }
+
+    #[test]
+    fn test_2312() {
+        /* 
+        let m1 = 3;
+        let n1 = 5;
+        let prices1 = vec![vec![1, 4, 2], vec![2, 2, 7], vec![2, 1, 3]];
+        let result = Solution::maximize_profit(m1,n1,prices1);
+        assert_eq!(result, 19);*/
+
+        let m1 = 4;
+        let n1 = 6;
+        let prices1 = vec![vec![3,2,10], vec![1,4,2], vec![4,1,3]];
+        let result = Solution::maximize_profit(m1,n1,prices1);
+        assert_eq!(result, 32);
+    }
 
     #[test]
     fn test_shortest_to_char_1() {
