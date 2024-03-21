@@ -509,15 +509,218 @@ impl Solution {
     }
 }
 
+//2684
+impl Solution {
+    //wrong
+    pub fn max_moves(grid: Vec<Vec<i32>>) -> i32 {
+        let m = grid.len();
+        let n = grid[0].len();
+        let mut dp = vec![vec![0; n]; m];
+        let mut res = 0;
+        // 从右往左遍历每一列
+        for j in (0..n).rev() {
+            // 从上到下遍历每一行
+            for i in 0..m {
+                // 计算当前位置能够移动的最大次数
+                dp[i][j] = 0;
+                if j + 1 < n {
+                    if i > 0 && grid[i][j] < grid[i - 1][j + 1] {
+                        dp[i][j] = dp[i][j].max(dp[i - 1][j + 1] + 1);
+                    }
+                    if grid[i][j] < grid[i][j + 1] {
+                        dp[i][j] = dp[i][j].max(dp[i][j + 1] + 1);
+                    }
+                    if i + 1 < m && grid[i][j] < grid[i + 1][j + 1] {
+                        dp[i][j] = dp[i][j].max(dp[i + 1][j + 1] + 1);
+                    }
+                }
+                if j ==0 {
+                    res = res.max(dp[i][j]);
+                }
+              
+            }
+        }
+        println!("dp:{:?}",dp);
+        res
+        // // 返回dp数组中的最大值
+        // dp.iter().map(|row| *row.iter().max().unwrap()).max().unwrap()
+    }
+}
+
+impl Solution {
+    pub fn max_moves1(grid: Vec<Vec<i32>>) -> i32 {
+        let mut res = 0;
+
+        fn dfs(g: &Vec<Vec<i32>>, i: usize, j: usize) -> i32 {
+            let m = g.len();
+            let n = g[0].len();
+            if j == n - 1 {
+                return 0;
+            }
+            let mut res = 0;
+            if i > 0 && g[i][j] < g[i - 1][j + 1] {
+                res = res.max(dfs(&g, i - 1, j + 1) + 1);
+            }
+            if g[i][j] < g[i][j + 1] {
+                res = res.max(dfs(&g, i, j + 1) + 1);
+            }
+            if i + 1 < m && g[i][j] < g[i + 1][j + 1] {
+                res = res.max(dfs(&g, i + 1, j + 1) + 1);
+            }
+            res
+        }
+
+        for i in 0..grid.len() {
+            res = res.max(dfs(&grid, i, 0));
+            println!("res:{}", res);
+        }
+        res
+    }
+}
+
+//1793
+impl Solution {
+    //超时
+    pub fn maximum_score(nums: Vec<i32>, k: i32) -> i64 {
+        use std::cmp::{min,max};
+        let n = nums.len();
+        let mut ans = 0;
+        for i in 0..=k as usize {
+            let mut tmp = nums[i] as i64;
+            for k in i..=k as usize {
+                tmp = min(tmp,nums[k] as i64);
+            }
+            for j in k as usize..n {
+                tmp = min(tmp,nums[j] as i64);
+                ans = max(ans, tmp*((j-i+1) as i64));
+            }
+        }
+        ans
+    }
+
+    //双指针
+    pub fn maximum_score_1(nums: Vec<i32>, k: i32) -> i32 {
+        let n = nums.len() as i32;
+        let mut left = k  - 1;
+        let mut right = k  + 1;
+        let mut ans = 0;
+        for i in (0..= nums[k as usize]).rev() {
+            while left >= 0 && left < n && nums[left as usize] >= i {
+                left -= 1;
+            }
+            while right < n && nums[right as usize] >= i {
+                right += 1;
+            }
+            ans = ans.max((right - left - 1) as i32 * i);
+            if left == -1 && right == n {
+                break;
+            }
+        }
+        ans
+    }
+
+    //优化的双指针
+    pub fn maximum_score_2(nums: Vec<i32>, k: i32) -> i32 {
+        let n = nums.len() as i32;
+        let mut left = k as i32 - 1;
+        let mut right = k + 1;
+        let mut ans = 0;
+        let mut i = nums[k as usize];
+        loop {
+            while left >= 0 && left < n && nums[left as usize] >= i {
+                left -= 1;
+            }
+            while right < n && nums[right as usize] >= i {
+                right += 1;
+            }
+            ans = ans.max((right - left - 1) * i);
+            if left == -1 && right == n {
+                break;
+            }
+            let lval = if left == -1 { -1 } else { nums[left as usize]};
+            let rval = if right == n { -1 } else { nums[right as usize]};
+            i = lval.max(rval);
+            if i == -1 {
+                break;
+            }
+        }
+        ans
+    }
+
+}
+
+//2671
+struct FrequencyTracker {
+    freq: HashMap<i32, i32>,
+    freq_cnt: HashMap<i32, i32>,
+}
+
+impl FrequencyTracker {
+    fn new() -> Self {
+        FrequencyTracker {
+            freq: HashMap::new(),
+            freq_cnt: HashMap::new(),
+        }
+    }
+    
+    fn add(&mut self, number: i32) {
+        let prev = *self.freq.get(&number).unwrap_or(&0);
+        *self.freq_cnt.entry(prev).or_insert(0) -= 1;
+        *self.freq.entry(number).or_insert(0) += 1;
+        *self.freq_cnt.entry(prev + 1).or_insert(0) += 1;
+    }
+    
+    fn delete_one(&mut self, number: i32) {
+        if self.freq.get(&number).unwrap_or(&0) == &0 {
+            return;
+        }
+        let prev = *self.freq.get(&number).unwrap();
+        *self.freq_cnt.entry(prev).or_insert(0) -= 1;
+        *self.freq.entry(number).or_insert(0) -= 1;
+        *self.freq_cnt.entry(prev - 1).or_insert(0) += 1;
+    }
+    
+    fn has_frequency(&self, frequency: i32) -> bool {
+        self.freq_cnt.get(&frequency).unwrap_or(&0) > &0
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_1793() {
+        let s = vec![1,4,3,7,4,5];
+        let result = Solution::maximum_score_2(s,3);
+        assert_eq!(result, 15);
+        let s = vec![5,5,4,5,4,1,1,1];
+        let result = Solution::maximum_score(s,0);
+        assert_eq!(result, 20);
+    }
+
+    #[test]
+    fn test_2671() {
+        let mut tracker = FrequencyTracker::new();
+        println!("{}", tracker.has_frequency(1));
+        tracker.add(1);
+        tracker.delete_one(1);
+        println!("{}", tracker.has_frequency(1));
+    }
 
     #[test]
     fn max_array_value() {
         let s = vec![2,3,7,9,3];
         let result = Solution::max_array_value(s);
         assert_eq!(result, 21);
+    }
+
+    #[test]
+    fn test_2684() {
+        let s = vec![vec![3,2,4],vec![2,1,9],vec![1,1,7]];
+        let result = Solution::max_moves(s);
+        assert_eq!(result, 3);
     }
 
     #[test]
