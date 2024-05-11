@@ -1,0 +1,24 @@
+[package]
+name = "Design_Patterns"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+
+# 01简单工厂模式
+[[bin]]
+name = "01"
+path = "src/examples/01简单工厂模式.rs"
+
+# 02工厂方法模式
+[[bin]]
+name = "02"
+path = "src/examples/02工厂方法模式.rs"
+
+# 03抽象工厂模式
+[[bin]]
+name = "03"
+path = "src/examples/03抽象工厂模式.rs"

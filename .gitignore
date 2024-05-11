@@ -3,3 +3,5 @@
 .vscode
 /timer_future/target
 /timer_future/Cargo.lock
+/Design_Patterns/target
+/Design_Patterns/Cargo.lock
