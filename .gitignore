@@ -1,7 +1,5 @@
-/lee_code/target
-/lee_code/Cargo.lock
+
 .vscode
-/timer_future/target
-/timer_future/Cargo.lock
-/Design_Patterns/target
-/Design_Patterns/Cargo.lock
+*/cargo.lock
+*/target
+**/target
