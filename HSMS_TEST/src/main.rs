@@ -1,37 +1,41 @@
-use std::collections::LinkedList;
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use enums::secs_data_type::SecsDataType;
 use enums::secs_type::SecsType;
+use hex::encode;
 use model::secs_body::SecsBody;
 use model::secs_body_common::SecsBodyCommon;
 use model::secs_ceid::CEID;
+use model::secs_client::ClientInfo;
 use model::secs_ecid::ECID;
 use model::secs_header::SecsHeader;
 use model::secs_rptid::RPTID;
 use model::secs_server::Secs;
 use model::secs_svid::SVID;
 use model::secs_vid::VID;
-use model::SecsVO::{XMLCEIDs, XMLECIDs, XMLRPTIDRef, XMLRPTIDs, XMLSecs, XMLSVIDRef, XMLSVIDs, XMLCEID, XMLECID, XMLRPTID, XMLSVID};
-use std::net::SocketAddr;
-use tokio::net::{TcpListener, TcpStream};
-use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
-use tokio::sync::mpsc;
+use model::SecsVO::{
+    XMLCEIDs, XMLECIDs, XMLRPTIDRef, XMLRPTIDs, XMLSVIDRef, XMLSVIDs, XMLSecs, XMLCEID, XMLECID,
+    XMLRPTID, XMLSVID,
+};
 use nom::bytes::complete::{tag, take};
 use nom::IResult;
-use hex::encode;
-use std::collections::VecDeque;
-use tokio::time::{sleep, timeout, Duration, Instant};
-use std::sync::Mutex;
-use tokio::sync;
-use std::sync::Arc;
-use std::collections::HashMap;
-use serde_xml_rs::from_str;
 use quick_xml::se;
+use serde_xml_rs::from_str;
+use std::collections::HashMap;
+use std::collections::LinkedList;
+use std::collections::VecDeque;
+use std::net::SocketAddr;
+use std::sync::Arc;
+use std::sync::Mutex;
+use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync;
+use tokio::sync::mpsc;
+use tokio::time::{sleep, timeout, Duration, Instant};
+use HSMS_TEST::model::secs_server;
 
-pub mod model;
 pub mod enums;
+pub mod model;
 
-const CONTROL_REQUEST_SIZE: usize = 14;
 const HEADER_SIZE: usize = 4;
 const TIMEOUT_DURATION: Duration = Duration::from_secs(1);
 
@@ -39,31 +43,38 @@ const TIMEOUT_DURATION: Duration = Duration::from_secs(1);
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "0.0.0.0:8080".parse::<SocketAddr>()?;
 
-    let listener = TcpListener::bind("0.0.0.0:8080").await?;
+    let listener = TcpListener::bind(addr).await?;
 
     println!("Listening on: {}", addr);
 
+    let mut secs_server = Arc::new(Secs::default());
     while let Ok((mut stream, addr)) = listener.accept().await {
+        let secs_server = secs_server.clone();
         println!("客户端{}连接", addr);
         tokio::spawn(async move {
             println!("1");
-            if let Err(e) = handle_client(&mut stream).await {
+            if let Err(e) = handle_client(
+                addr.clone(),
+                secs_server,
+                &mut stream,
+            ).await {
                 println!("Error handling client: {:?}", e);
             }
         });
-        
     }
 
     Ok(())
 }
 
 async fn handle_client(
-    stream: &mut tokio::net::TcpStream,
+    addr: SocketAddr,
+    secs_server: Arc<Secs>,
+    stream: &mut TcpStream,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let (tx, mut rx) = mpsc::channel(100);
+    secs_server.add_client(addr, tx.clone());
+
     println!("222");
-    let request_list_tmp: Arc<Mutex<Vec<Vec<u8>>>> = Arc::new(Mutex::new(Vec::new()));
-    let mut request_id: u8 = 0;
-    let mut is_data = false;
     let mut buffer = [0u8; 1024];
     let binary_list: Arc<Mutex<Vec<Vec<u8>>>> = Arc::new(Mutex::new(Vec::new()));
     let mut binary_response: Vec<Vec<u8>> = Vec::new();
@@ -74,6 +85,7 @@ async fn handle_client(
     hashmap.insert(1003, 13);
     hashmap.insert(1004, 14);
     hashmap.insert(1005, 15);
+
     loop {
         {
             let mut binary_list_arc = binary_list.lock().unwrap();
@@ -86,15 +98,14 @@ async fn handle_client(
                     let mut body_byte: &[u8];
                     if receive_byte.len() > 14 {
                         body_byte = &receive_byte[14..];
-                    }
-                    else {
+                    } else {
                         body_byte = &[];
                     }
                     println!("header{:?}, body{:?}", header_byte, body_byte);
                     let secs_header = SecsHeader::new(header_byte);
                     println!("secs_header:{:#?}", secs_header);
                     let header_request = secs_header.unwrap().to_string();
-                    println!("{:?}",header_request);
+                    println!("{:?}", header_request);
 
                     match header_request.as_str() {
                         "S0F0" => {
@@ -107,25 +118,25 @@ async fn handle_client(
                             response[8] = secs_header.unwrap().p_type;
                             response[10..].copy_from_slice(&secs_header.unwrap().system_bytes);
                             match s_type {
-                                SecsType::SelectReq =>{
+                                SecsType::SelectReq => {
                                     let response_s_type = SecsType::SelectRsp;
                                     let response_s_type_int: u8 = response_s_type.into();
                                     response[9] = response_s_type_int;
                                     println!("response SelectReq:{:?}", response);
                                     binary_response.push(response.to_vec());
-                                },
-                                SecsType::LinkTestReq  =>{
+                                }
+                                SecsType::LinkTestReq => {
                                     let response_s_type = SecsType::LinkTestRsp;
                                     let response_s_type_int: u8 = response_s_type.into();
                                     response[9] = response_s_type_int;
                                     println!("responseLinkTestReq :{:?}", response);
                                     binary_response.push(response.to_vec());
-                                },
-                                _ => { println!("Received unknown SecsType");}
+                                }
+                                _ => {
+                                    println!("Received unknown SecsType");
+                                }
                             }
-                            
-
-                        },
+                        }
                         "S1F1" => {
                             let mut secs_body = SecsBody::new_root(SecsDataType::B, None);
                             secs_body.set_body(body_byte);
@@ -133,7 +144,8 @@ async fn handle_client(
                             let software = "FlexSCADA".to_string();
                             let version = "v1.6.0".to_string();
                             let mut resbody = SecsBody::new_root(SecsDataType::L, None);
-                            resbody.add(SecsBody::new(SecsDataType::BOOlEAN, Some("1".to_string())));
+                            resbody
+                                .add(SecsBody::new(SecsDataType::BOOlEAN, Some("1".to_string())));
                             let mut mainbody = SecsBody::new(SecsDataType::L, None);
                             mainbody.add(SecsBody::new(SecsDataType::ASCII, Some(software)));
                             mainbody.add(SecsBody::new(SecsDataType::ASCII, Some(version)));
@@ -148,7 +160,7 @@ async fn handle_client(
                             );
                             println!("[secs] S1F2 send secs_data:{:?}", data);
                             binary_response.push(data.to_vec());
-                        },
+                        }
                         "S1F3" => {
                             let mut value_list: Vec<String> = Vec::new();
                             let mut variable_index: Vec<u32> = Vec::new();
@@ -172,21 +184,27 @@ async fn handle_client(
                                     value_list.push(value_string);
                                 }
                             }
-                        
+
                             println!("value_list: {:?}", value_list);
-                            
+
                             let mut resbody = SecsBody::new_root(SecsDataType::L, None);
                             for value in &value_list {
-                                resbody.add(SecsBody::new(SecsDataType::ASCII, Some(value.to_string())));
+                                resbody.add(SecsBody::new(
+                                    SecsDataType::ASCII,
+                                    Some(value.to_string()),
+                                ));
                             }
 
                             println!("{:#?}", resbody);
-                            let (_,data) = SecsBodyCommon::create_sces_message
-                                                                (1,4,secs_header.unwrap(),resbody);
+                            let (_, data) = SecsBodyCommon::create_sces_message(
+                                1,
+                                4,
+                                secs_header.unwrap(),
+                                resbody,
+                            );
                             println!("data:{:?}", data);
                             binary_response.push(data.to_vec());
-
-                        },
+                        }
                         "S2F41" => {
                             let mut value_list: Vec<String> = Vec::new();
                             let mut variable_index: Vec<u32> = Vec::new();
@@ -204,19 +222,25 @@ async fn handle_client(
                                                     continue;
                                                 } else {
                                                     // 跳出循环
-                                                    println!("RCMD error: {:?}",message);
+                                                    println!("RCMD error: {:?}", message);
                                                     break;
                                                 }
                                             }
                                         }
                                         SecsDataType::L => {
                                             // 处理 L 类型
-                                            if let Some(sub_secs_bodies1) = item.iter_sub_secs_body() {
+                                            if let Some(sub_secs_bodies1) =
+                                                item.iter_sub_secs_body()
+                                            {
                                                 for item1 in sub_secs_bodies1.iter() {
-                                                    if let Some(sub_secs_bodies2) = item1.iter_sub_secs_body() {
+                                                    if let Some(sub_secs_bodies2) =
+                                                        item1.iter_sub_secs_body()
+                                                    {
                                                         for item2 in sub_secs_bodies2.iter() {
                                                             if let Some(message) = &item2.message {
-                                                                if let Ok(int_value) = message.parse::<u32>() {
+                                                                if let Ok(int_value) =
+                                                                    message.parse::<u32>()
+                                                                {
                                                                     variable_index.push(int_value);
                                                                 }
                                                             }
@@ -229,7 +253,7 @@ async fn handle_client(
                                     }
                                 }
                             }
-                            if variable_index.len() > 0 && variable_index.len() %2 ==0 {
+                            if variable_index.len() > 0 && variable_index.len() % 2 == 0 {
                                 let mut iter = variable_index.iter();
                                 while let (Some(key), Some(value)) = (iter.next(), iter.next()) {
                                     hashmap.insert(*key, *value);
@@ -237,21 +261,26 @@ async fn handle_client(
 
                                 println!("{:?}", hashmap);
                             }
-                            
+
                             let mut resbody = SecsBody::new_root(SecsDataType::L, None);
-                            resbody.add(SecsBody::new(SecsDataType::ASCII, Some("WRITE".to_string())));
+                            resbody.add(SecsBody::new(
+                                SecsDataType::ASCII,
+                                Some("WRITE".to_string()),
+                            ));
                             resbody.add(SecsBody::new(SecsDataType::B, Some("\u{0}".to_string())));
                             println!("{:#?}", resbody);
-                            println!("variable_index:{:?}",variable_index);
-                            let (_,data) = SecsBodyCommon::create_sces_message
-                                                                (1,4,secs_header.unwrap(),resbody);
+                            println!("variable_index:{:?}", variable_index);
+                            let (_, data) = SecsBodyCommon::create_sces_message(
+                                1,
+                                4,
+                                secs_header.unwrap(),
+                                resbody,
+                            );
                             println!("data:{:?}", data);
                             binary_response.push(data.to_vec());
-
-                        },
-                        _ =>    unreachable!("Invalid SecsType value"),
+                        }
+                        _ => unreachable!("Invalid SecsType value"),
                     }
-
                 }
                 binary_list_arc.clear();
             }
@@ -260,7 +289,8 @@ async fn handle_client(
 
         if binary_response.len() > 0 {
             for (i, response_byte) in binary_response.iter().enumerate() {
-                //println!("Row {}: {:?}", i, response_byte);
+                println!("Row {}: {:?}", i, response_byte);
+                // secs_server.send_message(&addr, response_byte).await;
                 stream.write_all(response_byte).await?;
             }
             binary_response.clear();
@@ -271,9 +301,9 @@ async fn handle_client(
                 println!("Connection closed");
                 return Ok(());
             }
-            Ok(n) if n == CONTROL_REQUEST_SIZE => {
-                // let length = BigEndian::read_u32(&buffer[..HEADER_SIZE]);
-                let length = 20;
+            Ok(n) => {
+                let length = BigEndian::read_u32(&buffer[..HEADER_SIZE]);
+                // let length = 20;
                 let control_request = buffer[..n].to_vec();
                 println!("data:{:?}, length = {}", control_request, length);
 
@@ -322,7 +352,6 @@ async fn handle_client(
                 return Ok(());
             }
         }
-        
     }
 }
 
@@ -357,7 +386,7 @@ async fn handle_data_request(
     Ok(())
 }
 
-/* 
+/*
 match stream.read(&mut buffer).await {
     Ok(n) if n == 0 => {
         println!("Connection closed");
@@ -397,6 +426,7 @@ async fn handle_control_request(
     }
 }
 
+/*
 fn parse_xml_to_secs(xml_data: &str) -> Secs {
     let xml_secs: XMLSecs = from_str(xml_data).expect("Failed to parse XML");
 
@@ -515,6 +545,7 @@ fn generate_xml_from_secs(secs: &Secs) -> Result<String, Box<dyn std::error::Err
     let xml_string = se::to_string(&xml_secs)?;
     Ok(xml_string)
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -682,3 +713,4 @@ mod tests {
         println!("ans: {:#?}", ans);
     }
 }
+*/

@@ -12,3 +12,5 @@ pub mod secs_ecid;
 pub mod SecsVO;
 pub mod secs_vid;
 pub mod secs_id_generator;
+pub mod secs_client;
+pub mod message_id;

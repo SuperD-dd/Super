@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 
 use super::secs_vid::VID;
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct RPTID {
     pub id: String,
     pub name: String,
