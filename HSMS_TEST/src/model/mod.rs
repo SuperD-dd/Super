@@ -3,7 +3,6 @@ pub mod secs_header;
 pub mod secs_body_common;
 pub mod secs_message;
 pub mod common;
-pub mod eqp;
 pub mod secs_svid;
 pub mod secs_rptid;
 pub mod secs_ceid;

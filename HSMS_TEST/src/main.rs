@@ -21,6 +21,7 @@ use nom::bytes::complete::{tag, take};
 use nom::IResult;
 use quick_xml::se;
 use serde_xml_rs::from_str;
+use HSMS_TEST::eqp::eqp_management;
 use std::collections::HashMap;
 use std::collections::LinkedList;
 use std::collections::VecDeque;
@@ -95,204 +96,205 @@ async fn handle_client(
                 let mut binary_list_arc = binary_list.lock().unwrap();
                 if binary_list_arc.len() > 0 {
                     for (i, receive_byte) in binary_list_arc.iter().enumerate() {
-                        println!("Row {}: {:?}", i, receive_byte);
-                        let header_byte = &receive_byte[..14];
-                        let mut body_byte: &[u8];
-                        if receive_byte.len() > 14 {
-                            body_byte = &receive_byte[14..];
-                        } else {
-                            body_byte = &[];
-                        }
-                        println!("header{:?}, body{:?}", header_byte, body_byte);
-                        let secs_header = SecsHeader::new(header_byte);
-                        println!("secs_header:{:#?}", secs_header);
-                        let header_request = secs_header.unwrap().to_string();
-                        println!("{:?}", header_request);
+                        eqp_management::eqp_manger(tx.clone(), receive_byte);
+                    //     println!("Row {}: {:?}", i, receive_byte);
+                    //     let header_byte = &receive_byte[..14];
+                    //     let mut body_byte: &[u8];
+                    //     if receive_byte.len() > 14 {
+                    //         body_byte = &receive_byte[14..];
+                    //     } else {
+                    //         body_byte = &[];
+                    //     }
+                    //     println!("header{:?}, body{:?}", header_byte, body_byte);
+                    //     let secs_header: Option<SecsHeader> = SecsHeader::new(header_byte);
+                    //     println!("secs_header:{:#?}", secs_header);
+                    //     let header_request = secs_header.unwrap().to_string();
+                    //     println!("{:?}", header_request);
     
-                        let msg = match header_request.as_str() {
-                            "S0F0" => {
-                                let s_type: SecsType = secs_header.unwrap().get_secs_type();
-                                println!("s_type:{:?}", s_type);
-                                let mut response: [u8; 14] = [0; 14];
-                                response[3] = 10;
-                                response[4] = secs_header.unwrap().up_session_id;
-                                response[5] = secs_header.unwrap().lower_session_id;
-                                response[8] = secs_header.unwrap().p_type;
-                                response[10..].copy_from_slice(&secs_header.unwrap().system_bytes);
-                                match s_type {
-                                    SecsType::SelectReq => {
-                                        let response_s_type = SecsType::SelectRsp;
-                                        let response_s_type_int: u8 = response_s_type.into();
-                                        response[9] = response_s_type_int;
-                                        println!("response SelectReq:{:?}", response);
-                                        response.to_vec()
-                                    }
-                                    SecsType::LinkTestReq => {
-                                        let response_s_type = SecsType::LinkTestRsp;
-                                        let response_s_type_int: u8 = response_s_type.into();
-                                        response[9] = response_s_type_int;
-                                        println!("responseLinkTestReq :{:?}", response);
-                                        response.to_vec()
-                                    }
-                                    _ => {
-                                        println!("Received unknown SecsType");
-                                        Vec::new()
-                                    }
-                                }
-                            }
-                            "S1F1" => {
-                                let mut secs_body = SecsBody::new_root(SecsDataType::B, None);
-                                secs_body.set_body(body_byte);
-                                println!("new_secs_body*********:{:#?}", secs_body);
-                                let software = "FlexSCADA".to_string();
-                                let version = "v1.6.0".to_string();
-                                let mut resbody = SecsBody::new_root(SecsDataType::L, None);
-                                resbody
-                                    .add(SecsBody::new(SecsDataType::BOOlEAN, Some("1".to_string())));
-                                let mut mainbody = SecsBody::new(SecsDataType::L, None);
-                                mainbody.add(SecsBody::new(SecsDataType::ASCII, Some(software)));
-                                mainbody.add(SecsBody::new(SecsDataType::ASCII, Some(version)));
-                                resbody.add(mainbody);
-                                println!("[secs] S1F1 response_secs_body: {:#?}", resbody);
-                                // 将SecsBody解析为二进制
-                                let (_, data) = SecsBodyCommon::create_sces_message(
-                                    1,
-                                    2,
-                                    secs_header.unwrap(),
-                                    resbody,
-                                );
-                                println!("[secs] S1F2 send secs_data:{:?}", data);
-                                data.to_vec()
-                            }
-                            "S1F3" => {
-                                let mut value_list: Vec<String> = Vec::new();
-                                let mut variable_index: Vec<u32> = Vec::new();
-                                let mut secs_body = SecsBody::new_root(SecsDataType::B, None);
-                                secs_body.set_body(body_byte);
-                                println!("new_secs_body:{:#?}", secs_body);
-                                if let Some(sub_secs_bodies) = secs_body.iter_sub_secs_body() {
-                                    for item in sub_secs_bodies.iter() {
-                                        // 处理每个元素（item）
-                                        if let Some(message) = &item.message {
-                                            if let Ok(int_value) = message.parse::<u32>() {
-                                                variable_index.push(int_value);
-                                            }
-                                        }
-                                    }
-                                }
-                                println!("variable_index: {:?}", variable_index);
-                                for index in &variable_index {
-                                    if let Some(value) = hashmap.get(index) {
-                                        let value_string = value.to_string();
-                                        value_list.push(value_string);
-                                    }
-                                }
+                    //     let msg = match header_request.as_str() {
+                    //         "S0F0" => {
+                    //             let s_type: SecsType = secs_header.unwrap().get_secs_type();
+                    //             println!("s_type:{:?}", s_type);
+                    //             let mut response: [u8; 14] = [0; 14];
+                    //             response[3] = 10;
+                    //             response[4] = secs_header.unwrap().up_session_id;
+                    //             response[5] = secs_header.unwrap().lower_session_id;
+                    //             response[8] = secs_header.unwrap().p_type;
+                    //             response[10..].copy_from_slice(&secs_header.unwrap().system_bytes);
+                    //             match s_type {
+                    //                 SecsType::SelectReq => {
+                    //                     let response_s_type = SecsType::SelectRsp;
+                    //                     let response_s_type_int: u8 = response_s_type.into();
+                    //                     response[9] = response_s_type_int;
+                    //                     println!("response SelectReq:{:?}", response);
+                    //                     response.to_vec()
+                    //                 }
+                    //                 SecsType::LinkTestReq => {
+                    //                     let response_s_type = SecsType::LinkTestRsp;
+                    //                     let response_s_type_int: u8 = response_s_type.into();
+                    //                     response[9] = response_s_type_int;
+                    //                     println!("responseLinkTestReq :{:?}", response);
+                    //                     response.to_vec()
+                    //                 }
+                    //                 _ => {
+                    //                     println!("Received unknown SecsType");
+                    //                     Vec::new()
+                    //                 }
+                    //             }
+                    //         }
+                    //         "S1F1" => {
+                    //             let mut secs_body = SecsBody::new_root(SecsDataType::B, None);
+                    //             secs_body.set_body(body_byte);
+                    //             println!("new_secs_body*********:{:#?}", secs_body);
+                    //             let software = "FlexSCADA".to_string();
+                    //             let version = "v1.6.0".to_string();
+                    //             let mut resbody = SecsBody::new_root(SecsDataType::L, None);
+                    //             resbody
+                    //                 .add(SecsBody::new(SecsDataType::BOOlEAN, Some("1".to_string())));
+                    //             let mut mainbody = SecsBody::new(SecsDataType::L, None);
+                    //             mainbody.add(SecsBody::new(SecsDataType::ASCII, Some(software)));
+                    //             mainbody.add(SecsBody::new(SecsDataType::ASCII, Some(version)));
+                    //             resbody.add(mainbody);
+                    //             println!("[secs] S1F1 response_secs_body: {:#?}", resbody);
+                    //             // 将SecsBody解析为二进制
+                    //             let (_, data) = SecsBodyCommon::create_sces_message(
+                    //                 1,
+                    //                 2,
+                    //                 secs_header.unwrap(),
+                    //                 resbody,
+                    //             );
+                    //             println!("[secs] S1F2 send secs_data:{:?}", data);
+                    //             data.to_vec()
+                    //         }
+                    //         "S1F3" => {
+                    //             let mut value_list: Vec<String> = Vec::new();
+                    //             let mut variable_index: Vec<u32> = Vec::new();
+                    //             let mut secs_body = SecsBody::new_root(SecsDataType::B, None);
+                    //             secs_body.set_body(body_byte);
+                    //             println!("new_secs_body:{:#?}", secs_body);
+                    //             if let Some(sub_secs_bodies) = secs_body.iter_sub_secs_body() {
+                    //                 for item in sub_secs_bodies.iter() {
+                    //                     // 处理每个元素（item）
+                    //                     if let Some(message) = &item.message {
+                    //                         if let Ok(int_value) = message.parse::<u32>() {
+                    //                             variable_index.push(int_value);
+                    //                         }
+                    //                     }
+                    //                 }
+                    //             }
+                    //             println!("variable_index: {:?}", variable_index);
+                    //             for index in &variable_index {
+                    //                 if let Some(value) = hashmap.get(index) {
+                    //                     let value_string = value.to_string();
+                    //                     value_list.push(value_string);
+                    //                 }
+                    //             }
     
-                                println!("value_list: {:?}", value_list);
+                    //             println!("value_list: {:?}", value_list);
     
-                                let mut resbody = SecsBody::new_root(SecsDataType::L, None);
-                                for value in &value_list {
-                                    resbody.add(SecsBody::new(
-                                        SecsDataType::ASCII,
-                                        Some(value.to_string()),
-                                    ));
-                                }
+                    //             let mut resbody = SecsBody::new_root(SecsDataType::L, None);
+                    //             for value in &value_list {
+                    //                 resbody.add(SecsBody::new(
+                    //                     SecsDataType::ASCII,
+                    //                     Some(value.to_string()),
+                    //                 ));
+                    //             }
     
-                                println!("{:#?}", resbody);
-                                let (_, data) = SecsBodyCommon::create_sces_message(
-                                    1,
-                                    4,
-                                    secs_header.unwrap(),
-                                    resbody,
-                                );
-                                println!("data:{:?}", data);
-                                data.to_vec()
-                            }
-                            "S2F41" => {
-                                let mut value_list: Vec<String> = Vec::new();
-                                let mut variable_index: Vec<u32> = Vec::new();
-                                let mut secs_body = SecsBody::new_root(SecsDataType::B, None);
-                                secs_body.set_body(body_byte);
-                                println!("new_secs_body:{:#?}", secs_body);
-                                if let Some(sub_secs_bodies) = secs_body.iter_sub_secs_body() {
-                                    for item in sub_secs_bodies.iter() {
-                                        // 处理每个元素（item）
-                                        match item.data_type {
-                                            SecsDataType::ASCII => {
-                                                // 处理 ASCII 类型
-                                                if let Some(message) = &item.message {
-                                                    if message == "WRITE" {
-                                                        continue;
-                                                    } else {
-                                                        // 跳出循环
-                                                        println!("RCMD error: {:?}", message);
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                            SecsDataType::L => {
-                                                // 处理 L 类型
-                                                if let Some(sub_secs_bodies1) =
-                                                    item.iter_sub_secs_body()
-                                                {
-                                                    for item1 in sub_secs_bodies1.iter() {
-                                                        if let Some(sub_secs_bodies2) =
-                                                            item1.iter_sub_secs_body()
-                                                        {
-                                                            for item2 in sub_secs_bodies2.iter() {
-                                                                if let Some(message) = &item2.message {
-                                                                    if let Ok(int_value) =
-                                                                        message.parse::<u32>()
-                                                                    {
-                                                                        variable_index.push(int_value);
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            _ => unreachable!("S2F41 Invalid SecsDataType value"),
-                                        }
-                                    }
-                                }
-                                if variable_index.len() > 0 && variable_index.len() % 2 == 0 {
-                                    let mut iter = variable_index.iter();
-                                    while let (Some(key), Some(value)) = (iter.next(), iter.next()) {
-                                        hashmap.insert(*key, *value);
-                                    }
+                    //             println!("{:#?}", resbody);
+                    //             let (_, data) = SecsBodyCommon::create_sces_message(
+                    //                 1,
+                    //                 4,
+                    //                 secs_header.unwrap(),
+                    //                 resbody,
+                    //             );
+                    //             println!("data:{:?}", data);
+                    //             data.to_vec()
+                    //         }
+                    //         "S2F41" => {
+                    //             let mut value_list: Vec<String> = Vec::new();
+                    //             let mut variable_index: Vec<u32> = Vec::new();
+                    //             let mut secs_body = SecsBody::new_root(SecsDataType::B, None);
+                    //             secs_body.set_body(body_byte);
+                    //             println!("new_secs_body:{:#?}", secs_body);
+                    //             if let Some(sub_secs_bodies) = secs_body.iter_sub_secs_body() {
+                    //                 for item in sub_secs_bodies.iter() {
+                    //                     // 处理每个元素（item）
+                    //                     match item.data_type {
+                    //                         SecsDataType::ASCII => {
+                    //                             // 处理 ASCII 类型
+                    //                             if let Some(message) = &item.message {
+                    //                                 if message == "WRITE" {
+                    //                                     continue;
+                    //                                 } else {
+                    //                                     // 跳出循环
+                    //                                     println!("RCMD error: {:?}", message);
+                    //                                     break;
+                    //                                 }
+                    //                             }
+                    //                         }
+                    //                         SecsDataType::L => {
+                    //                             // 处理 L 类型
+                    //                             if let Some(sub_secs_bodies1) =
+                    //                                 item.iter_sub_secs_body()
+                    //                             {
+                    //                                 for item1 in sub_secs_bodies1.iter() {
+                    //                                     if let Some(sub_secs_bodies2) =
+                    //                                         item1.iter_sub_secs_body()
+                    //                                     {
+                    //                                         for item2 in sub_secs_bodies2.iter() {
+                    //                                             if let Some(message) = &item2.message {
+                    //                                                 if let Ok(int_value) =
+                    //                                                     message.parse::<u32>()
+                    //                                                 {
+                    //                                                     variable_index.push(int_value);
+                    //                                                 }
+                    //                                             }
+                    //                                         }
+                    //                                     }
+                    //                                 }
+                    //                             }
+                    //                         }
+                    //                         _ => unreachable!("S2F41 Invalid SecsDataType value"),
+                    //                     }
+                    //                 }
+                    //             }
+                    //             if variable_index.len() > 0 && variable_index.len() % 2 == 0 {
+                    //                 let mut iter = variable_index.iter();
+                    //                 while let (Some(key), Some(value)) = (iter.next(), iter.next()) {
+                    //                     hashmap.insert(*key, *value);
+                    //                 }
     
-                                    println!("{:?}", hashmap);
-                                }
+                    //                 println!("{:?}", hashmap);
+                    //             }
     
-                                let mut resbody = SecsBody::new_root(SecsDataType::L, None);
-                                resbody.add(SecsBody::new(
-                                    SecsDataType::ASCII,
-                                    Some("WRITE".to_string()),
-                                ));
-                                resbody.add(SecsBody::new(SecsDataType::B, Some("\u{0}".to_string())));
-                                println!("{:#?}", resbody);
-                                println!("variable_index:{:?}", variable_index);
-                                let (_, data) = SecsBodyCommon::create_sces_message(
-                                    1,
-                                    4,
-                                    secs_header.unwrap(),
-                                    resbody,
-                                );
-                                println!("data:{:?}", data);
-                                data.to_vec()
-                            }
-                            _ => unreachable!("Invalid SecsType value"),
-                        };
-                        let tx = tx.clone();
-                        let future = async move {
-                            println!("发送消息ing:{:?}", msg);
-                            tx.send(msg).await.unwrap();
-                        };
-                        // 使用阻塞运行时执行异步代码
-                        println!("准备发送消息");
-                        block_on(future);
-                        println!("发完了消息");
+                    //             let mut resbody = SecsBody::new_root(SecsDataType::L, None);
+                    //             resbody.add(SecsBody::new(
+                    //                 SecsDataType::ASCII,
+                    //                 Some("WRITE".to_string()),
+                    //             ));
+                    //             resbody.add(SecsBody::new(SecsDataType::B, Some("\u{0}".to_string())));
+                    //             println!("{:#?}", resbody);
+                    //             println!("variable_index:{:?}", variable_index);
+                    //             let (_, data) = SecsBodyCommon::create_sces_message(
+                    //                 1,
+                    //                 4,
+                    //                 secs_header.unwrap(),
+                    //                 resbody,
+                    //             );
+                    //             println!("data:{:?}", data);
+                    //             data.to_vec()
+                    //         }
+                    //         _ => unreachable!("Invalid SecsType value"),
+                    //     };
+                    //     let tx = tx.clone();
+                    //     let future = async move {
+                    //         println!("发送消息ing:{:?}", msg);
+                    //         tx.send(msg).await.unwrap();
+                    //     };
+                    //     // 使用阻塞运行时执行异步代码
+                    //     println!("准备发送消息");
+                    //     block_on(future);
+                    //     println!("发完了消息");
                     }
                     binary_list_arc.clear();
                 }
