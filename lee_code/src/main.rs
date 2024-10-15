@@ -685,10 +685,48 @@ impl FrequencyTracker {
     }
 }
 
+// 3129 找出所有稳定的二进制数组I
+// https://leetcode.cn/problems/find-all-possible-stable-binary-arrays-i/description/
+impl Solution {
+    pub fn number_of_stable_arrays(zero: i32, one: i32, limit: i32) -> i32 {
+        const MOD: i32 = 1_000_000_007;
+        let mut dp: Vec<Vec<i32>> = Vec::new();
+
+        todo!()
+    }
+}
 
 #[cfg(test)]
 mod tests {
+    use core::f32;
+    use std::u64;
+
     use super::*;
+
+    #[test]
+    fn test_312111() {
+        let max1 = f32::MAX;
+        let min1 = f32::MIN;
+        println!("max1{:?}", max1);
+        println!("min1{:?}", min1);
+        let u8_1 = max1 as u64;
+        println!("{:?}", u8_1);
+        let u8_1 = min1 as u64;
+        println!("{:?}", u8_1);
+        let u64_max: f32 = 1.67;
+        let u8_1 = u64_max as u64;
+        println!("{:?}", u8_1);
+        let i8_1 = u8_1 as i32;
+        println!("{:?}", i8_1);
+    }
+
+    #[test]
+    fn test_3129() {
+        let result = Solution::number_of_stable_arrays(1, 1, 2);
+        assert_eq!(result, 2);
+        let result = Solution::number_of_stable_arrays(3, 3, 2);
+        assert_eq!(result, 14);
+    }
 
     #[test]
     fn test_1793() {
