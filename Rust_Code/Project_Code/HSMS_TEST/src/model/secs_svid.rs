@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::enums::secs_data_type::SecsDataType;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SVID {
     /// ID
     pub id: String,

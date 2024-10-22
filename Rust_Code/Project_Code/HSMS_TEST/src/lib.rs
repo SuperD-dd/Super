@@ -2,3 +2,4 @@
 pub mod enums;
 pub mod model;
 pub mod utils;
+pub mod eqp;
