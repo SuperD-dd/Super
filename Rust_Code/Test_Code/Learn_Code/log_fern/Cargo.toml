@@ -1,0 +1,11 @@
+[package]
+name = "log_fern"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+env_logger = "0.11.5"
+fern = "0.7"  # 适用于日志功能
