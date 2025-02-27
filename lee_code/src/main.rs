@@ -247,6 +247,95 @@ impl Allocator {
     }
 }
 
+//1472 浏览器浏览记录
+struct BrowserHistory {
+    history: Vec<String>,
+    current_index: usize,
+}
+
+/** 
+ * `&self` means the method takes an immutable reference.
+ * If you need a mutable reference, change it to `&mut self` instead.
+ */
+impl BrowserHistory {
+
+    fn new(homepage: String) -> Self {
+        Self{
+            history: vec![homepage],
+            current_index: 0,
+        }
+    }
+    
+    fn visit(&mut self, url: String) {
+        if (self.current_index + 1) == self.history.len() {
+            self.history.push(url);
+        } else {
+            self.history[self.current_index + 1] = url;
+            self.history.drain((self.current_index + 2)..);
+        }
+        self.current_index += 1;
+    }
+    
+    fn back(&mut self, steps: i32) -> String {
+        if steps >= self.current_index as i32 {
+            self.current_index = 0;
+            return self.history[0].clone();
+        } else {
+            self.current_index -= steps as usize;
+            return self.history[self.current_index].clone();
+        }
+    }
+    
+    fn forward(&mut self, steps: i32) -> String {
+        if steps + self.current_index as i32 >= self.history.len() as i32 {
+            self.current_index = self.history.len() - 1;
+            return self.history[self.current_index].clone();
+        } else {
+            self.current_index += steps as usize;
+            return self.history[self.current_index].clone();
+        }
+    }
+}
+
+/**
+ * Your BrowserHistory object will be instantiated and called as such:
+ * let obj = BrowserHistory::new(homepage);
+ * obj.visit(url);
+ * let ret_2: String = obj.back(steps);
+ * let ret_3: String = obj.forward(steps);
+ */
+use std::cmp::{max, min};
+
+struct BrowserHistory1 {
+    urls: Vec<String>,
+    curr_index: usize,
+}
+
+impl BrowserHistory1 {
+    fn new(homepage: String) -> Self {
+        BrowserHistory1 {
+            urls: vec![homepage],
+            curr_index: 0,
+        }
+    }
+    
+    fn visit(&mut self, url: String) {
+        self.urls.truncate(self.curr_index + 1);
+        self.urls.push(url);
+        self.curr_index += 1;
+    }
+    
+    fn back(&mut self, steps: i32) -> String {
+        self.curr_index = max(self.curr_index as i32 - steps, 0) as usize;
+        return self.urls[self.curr_index].clone();
+    }
+    
+    fn forward(&mut self, steps: i32) -> String {
+        self.curr_index = std::cmp::min(self.curr_index + steps as usize, self.urls.len() - 1);
+        return self.urls[self.curr_index].clone();
+    }
+}
+
 struct Solution;
 //125
 impl Solution {
@@ -448,7 +537,6 @@ impl Solution {
     }
 }
 
-use std::cmp::{max, min};
 //2312
 use std::collections::HashMap;
 impl Solution {
@@ -818,6 +906,111 @@ impl Solution {
     }
 }
 
+/// 2296文本编辑器
+#[derive(Debug)]
+struct TextEditor {
+    text: String,
+    cursor: usize,
+}
+
+
+/** 
+ * `&self` means the method takes an immutable reference.
+ * If you need a mutable reference, change it to `&mut self` instead.
+ */
+impl TextEditor {
+    fn new() -> Self {
+        Self{
+            text: "".to_string(),
+            cursor: 0,
+        }
+    }
+    
+    fn add_text(&mut self, text: String) {
+        self.text.insert_str(self.cursor, &text);
+        self.cursor += text.len();
+    }
+    
+    fn delete_text(&mut self, k: i32) -> i32 {
+        let ans = min(self.cursor as i32, k);
+        if ans == 0 {
+            return 0;
+        }
+        self.text.drain(self.cursor - ans as usize ..self.cursor);
+        self.cursor = max(self.cursor - ans as usize, 0);
+        ans
+    }
+    
+    fn cursor_left(&mut self, k: i32) -> String {
+        self.cursor = max(self.cursor as i32 - k , 0) as usize;
+        self.text[self.cursor - min(self.cursor , 10) ..self.cursor].to_string()
+    }
+    
+    fn cursor_right(&mut self, k: i32) -> String {
+        self.cursor = min(self.cursor as i32  + k , self.text.len() as i32) as usize;
+        self.text[self.cursor - min(self.cursor , 10) ..self.cursor].to_string()
+    }
+}
+
+// 解法2 分左右光标
+struct TextEditor1 {
+    // 光标前面的
+    left: Vec<char>,
+
+    // 光标后面的
+    right: Vec<char>
+}
+
+impl TextEditor1 {
+    fn new() -> Self {
+        Self {
+            left: vec![],
+            right: vec![]
+        }
+    }
+
+    fn add_text(&mut self, text: String) {
+        for c in text.chars() {
+            self.left.push(c);
+        }
+    }
+
+    fn delete_text(&mut self, k: i32) -> i32 {
+        let len = self.left.len().min(k as usize);
+        self.left.truncate(self.left.len() - len);
+        len as i32
+    }
+
+    fn cursor_left(&mut self, k: i32) -> String {
+        let len = self.left.len().min(k as usize);
+        for _ in 0..len {
+            if let Some(x) = self.left.pop() {
+                self.right.push(x);
+            }
+        }
+        let chars  = &self.left[(self.left.len() - 10.min(self.left.len()))..self.left.len()];
+        String::from_iter(chars.iter())
+    }
+
+    fn cursor_right(&mut self, k: i32) -> String {
+        let len = self.right.len().min(k as usize);
+        for _ in 0..len {
+            if let Some(x) = self.right.pop() {
+                self.left.push(x);
+            }
+        }
+        let chars  = &self.left[(self.left.len() - 10.min(self.left.len()))..self.left.len()];
+        String::from_iter(chars.iter())
+    }
+}
+/**
+ * Your TextEditor object will be instantiated and called as such:
+ * let obj = TextEditor::new();
+ * obj.add_text(text);
+ * let ret_2: i32 = obj.delete_text(k);
+ * let ret_3: String = obj.cursor_left(k);
+ * let ret_4: String = obj.cursor_right(k);
+ */
 
 //3066
 impl Solution {
@@ -1152,6 +1345,37 @@ mod tests {
     use std::u64;
 
     use super::*;
+
+    #[test]
+    fn test_2296() {
+        let mut editor = TextEditor::new();
+
+        // Test case
+        editor.add_text("leetcode".to_string()); // null
+        println!("After addText('leetcode'): {}", editor.text); // "leetcode"
+    
+        let deleted = editor.delete_text(4); // 4
+        println!("After deleteText(4): deleted {} chars", deleted); // "4"
+        println!("#####editpr:{:?}", editor);
+        editor.add_text("practice".to_string()); // null
+        println!("After addText('practice'): {}", editor.text); // "lepractice"
+    
+        let cursor_right = editor.cursor_right(3); // "etpractice"
+        println!("After cursorRight(3): {}", cursor_right); // "etpractice"
+        println!("#####editpr:{:?}", editor);
+        let cursor_left = editor.cursor_left(8); // "leet"
+        println!("After cursorLeft(8): {}", cursor_left); // "leet"
+    
+        let deleted_again = editor.delete_text(10); // 4
+        println!("After deleteText(10): deleted {} chars", deleted_again); // "4"
+    
+        let cursor_left_again = editor.cursor_left(2); // ""
+        println!("After cursorLeft(2): {}", cursor_left_again); // ""
+    
+        let cursor_right_again = editor.cursor_right(6); // "practi"
+        println!("After cursorRight(6): {}", cursor_right_again); // "practi"
+        panic!()
+    }
 
     #[test]
     fn test_2266() {
