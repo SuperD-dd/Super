@@ -297,6 +297,7 @@ impl BrowserHistory {
     }
 }
 
+use core::{hash, num};
 /**
  * Your BrowserHistory object will be instantiated and called as such:
  * let obj = BrowserHistory::new(homepage);
@@ -686,7 +687,7 @@ impl Solution {
 }
 
 use std::fmt::{self, format};
-use std::{i32, iter};
+use std::{i32, iter, vec};
 //2864
 impl Solution {
     pub fn maximum_odd_binary_number(s: String) -> String {
@@ -1339,12 +1340,527 @@ impl Solution {
     }
 }
 
+//2353  方法一超时
+struct FoodRatings {
+    foods: HashMap<String, (String, i32)>, // 食物名 -> (类别, 评分)
+    categories: HashMap<String, Vec<String>>, // 类别 -> 食物名列表
+}
+
+impl FoodRatings {
+    fn new(foods: Vec<String>, categories: Vec<String>, ratings: Vec<i32>) -> Self {
+        let mut food_ratings = HashMap::new();
+        let mut categories_map = HashMap::new();
+
+        for (i, food) in foods.iter().enumerate() {
+            let category = &categories[i];
+            let rating = ratings[i];
+            food_ratings.insert(food.clone(), (category.clone(), rating));
+
+            categories_map
+                .entry(category.clone())
+                .or_insert(Vec::new())
+                .push(food.clone());
+        }
+
+        FoodRatings {
+            foods: food_ratings,
+            categories: categories_map,
+        }
+    }
+
+    fn highest_rated(&self, category: String) -> String {
+        let mut max_rating_food = None;
+
+        if let Some(food_list) = self.categories.get(&category) {
+            for food in food_list {
+                if let Some((_, rating)) = self.foods.get(food) {
+                    if max_rating_food.is_none()
+                        || max_rating_food
+                            .as_ref()
+                            .map_or(true, |(_, max_rating)| rating > max_rating)
+                    {
+                        max_rating_food = Some((food.clone(), *rating));
+                    } else if max_rating_food
+                        .as_ref()
+                        .map_or(false, |(max_food, cur_rating)| *rating == *cur_rating)
+                        && food < &max_rating_food.as_ref().unwrap().0
+                    {
+                        max_rating_food = Some((food.clone(), *rating));
+                    }
+                }
+            }
+        }
+
+        max_rating_food.unwrap_or_default().0
+    }
+
+    fn change_rating(&mut self, food: String, new_rating: i32) {
+        if let Some((_, rating)) = self.foods.get_mut(&food) {
+            *rating = new_rating;
+        }
+    }
+}
+
+//方法二
+use std::collections::BTreeSet;
+
+struct FoodRatings2 {
+    food_map: HashMap<String, (i32, String)>,
+    rating_map: HashMap<String, BTreeSet<(i32, String)>>,
+    n: usize,
+}
+
+impl FoodRatings2 {
+
+    fn new(foods: Vec<String>, cuisines: Vec<String>, ratings: Vec<i32>) -> Self {
+        let n = foods.len();
+        let mut food_map = HashMap::new();
+        let mut rating_map = HashMap::new();
+
+        for i in 0..n {
+            let food = foods[i].clone();
+            let cuisine = cuisines[i].clone();
+            let rating = ratings[i];
+            food_map.insert(food.clone(), (rating, cuisine.clone()));
+            rating_map
+                .entry(cuisine)
+                .or_insert_with(BTreeSet::new)
+                .insert((n as i32 - rating, food));
+        }
+
+        Self {
+            food_map,
+            rating_map,
+            n,
+        }
+    }
+    
+    fn change_rating(&mut self, food: String, new_rating: i32) {
+        if let Some((old_rating, cuisine)) = self.food_map.get(&food) {
+            let old_rating = *old_rating;
+            let cuisine = cuisine.clone();
+            self.rating_map
+                .get_mut(&cuisine)
+                .unwrap()
+                .remove(&(self.n as i32 - old_rating, food.clone()));
+            self.rating_map
+                .get_mut(&cuisine)
+                .unwrap()
+                .insert((self.n as i32 - new_rating, food.clone()));
+            self.food_map.insert(food, (new_rating, cuisine));
+        }
+    }
+    
+    fn highest_rated(&self, cuisine: String) -> String {
+        self.rating_map
+            .get(&cuisine)
+            .and_then(|set| set.iter().next())
+            .map(|(_, food)| food.clone())
+            .unwrap()
+    }
+}
+
+//方法三
+use std::collections::BinaryHeap;
+use std::cmp::Ordering;
+
+#[derive(Debug, Eq, PartialEq)]
+struct Pair(i32, String);
+
+impl PartialOrd for Pair {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Pair {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.0.cmp(&self.0).then_with(|| other.1.cmp(&self.1))
+    }
+}
+
+#[derive(Debug)]
+struct FoodRatings3 {
+    food_map: HashMap<String, (i32, String)>,
+    rating_map: HashMap<String, BinaryHeap<Pair>>,
+    n: i32,
+}
+
+impl FoodRatings3 {
+    fn new(foods: Vec<String>, cuisines: Vec<String>, ratings: Vec<i32>) -> Self {
+        let n = foods.len() as i32;
+        let mut food_map = HashMap::new();
+        let mut rating_map = HashMap::new();
+
+        for i in 0..foods.len() {
+            let food = foods[i].clone();
+            let cuisine = cuisines[i].clone();
+            let rating = ratings[i];
+            food_map.insert(food.clone(), (rating, cuisine.clone()));
+            rating_map
+                .entry(cuisine.clone())
+                .or_insert_with(BinaryHeap::new)
+                .push(Pair(n - rating, food.clone()));
+        }
+
+        FoodRatings3 {
+            food_map,
+            rating_map,
+            n,
+        }
+    }
+    
+    fn change_rating(&mut self, food: String, new_rating: i32) {
+        if let Some((old_rating, cuisine)) = self.food_map.get_mut(&food) {
+            *old_rating = new_rating;
+            self.rating_map
+                .get_mut(cuisine)
+                .unwrap()
+                .push(Pair(self.n - new_rating, food.clone()));
+        }
+    }
+    
+    fn highest_rated(&mut self, cuisine: String) -> String {
+        if let Some(heap) = self.rating_map.get_mut(&cuisine) {
+            while let Some(&ref item) = heap.peek() {
+                let rating = &item.0;
+                let food = &item.1;
+                if self.n - rating == self.food_map[food].0 {
+                    return food.clone();
+                }
+                heap.pop();
+            }
+        }
+        String::new()
+    }
+}
+/**
+ * Your FoodRatings object will be instantiated and called as such:
+ * let obj = FoodRatings::new(foods, cuisines, ratings);
+ * obj.change_rating(food, newRating);
+ * let ret_2: String = obj.highest_rated(cuisine);
+ */
+
+ //131分割回文串 I
+ use std::collections::VecDeque;
+
+impl Solution {
+    pub fn partition(s: String) -> Vec<Vec<String>> {
+        let n = s.len();
+        let mut res = vec![];
+        let mut stack = VecDeque::from([(0, vec![])]);
+
+        println!("初始 stack: {:?}", stack);
+
+        while let Some((start, acc)) = stack.pop_back() {
+            println!("弹出: start = {}, acc = {:?}", start, acc);
+            
+            for end in start + 1..=n {
+                println!("   (start={}, end={})",  start, end);
+                let t = (&s[start..end]).to_string();
+                if t.chars().eq(t.chars().rev()) {
+                    let mut acc = acc.clone();
+                    acc.push(t.clone());
+                    
+                    println!("  发现回文: {:?} (start={}, end={})", t, start, end);
+                    
+                    if end == n {
+                        println!("  🔥 结果加入: {:?}", acc);
+                        res.push(acc);
+                    } else {
+                        println!("  压入 stack: (start={}, acc={:?})", end, acc);
+                        stack.push_back((end, acc));
+                    }
+                }
+            }
+            println!("当前 stack: {:?}", stack);
+        }
+
+        println!("最终结果: {:?}", res);
+        res
+    }
+}
+
+//132分割回文串 II
+impl Solution {
+    // 超时
+    pub fn min_cut(s: String) -> i32 {
+        let mut ans = i32::MAX;
+        let n = s.len();
+        let mut stack = VecDeque::from([(0, vec![])]);
+        while let Some((start, acc)) = stack.pop_back() {
+            for end in start + 1..=n {
+                let t = (&s[start..end]).to_string();
+                if t.chars().eq(t.chars().rev()){
+                    let mut acc = acc.clone();
+                    acc.push(t.clone());
+                    if end == n {
+                        ans = ans.min(acc.len() as i32);
+                    } else {
+                        stack.push_back((end, acc));
+                    }
+                }
+            }
+        }
+
+        ans
+    }
+
+    pub fn min_cut2(s: String) -> i32 {
+        let n = s.len();
+        let s_bytes = s.as_bytes();
+        let mut f = vec![vec![true; n]; n];
+        for i in (0..n-1).rev() {
+            for j in i+1..n {
+                f[i][j] = s_bytes[i] == s_bytes[j] && f[i+1][j-1];
+            }
+        }
+        let mut dp = vec![0; n];
+        for r in 0..n {
+            if f[0][r] {
+                continue;
+            }
+            let mut res = i32::MAX;
+            for l in 0..=r {
+                if f[l][r] {
+                    res = res.min(dp[l - 1] + 1);
+                }
+            }
+            dp[r] = res;
+        }
+
+        dp[n-1]
+    }
+
+    //最快，中心扩展
+    pub fn min_cut3(s: String) -> i32 {
+        let s = s.into_bytes();
+        let n = s.len();
+        let mut f = vec![i32::MAX; n + 1];
+        f[0] = 0;
+        
+        println!("初始 f: {:?}", f);
+
+        for i in 0..n {
+            f[i + 1] = f[i + 1].min(f[i] + 1);
+            println!("\n--- 处理 i = {} (字符 '{}') ---", i, s[i] as char);
+            println!("假设单独切割: f[{}] = min({}, {}) = {}", i + 1, f[i + 1], f[i] + 1, f[i + 1]);
+
+            // 处理奇数长度回文
+            println!("  尝试奇数长度回文...");
+            for j in 1..=i.min(n - i) {
+                if s[i - j] == s[i + j - 1] {
+                    f[i + j] = f[i + j].min(f[i - j] + 1);
+                    println!("    回文: '{}' (索引 {}-{})", 
+                        String::from_utf8_lossy(&s[i - j..i + j]),
+                        i - j, i + j - 1
+                    );
+                    println!("    更新 f[{}]: min({}, {}) = {}", i + j, f[i + j], f[i - j] + 1, f[i + j]);
+                } else {
+                    println!("    终止扩展: '{}' ≠ '{}'", s[i - j] as char, s[i + j - 1] as char);
+                    break;
+                }
+            }
+
+            // 处理偶数长度回文
+            println!("  尝试偶数长度回文...");
+            for j in 1..=i.min(n - i - 1) {
+                if s[i - j] == s[i + j] {
+                    f[i + j + 1] = f[i + j + 1].min(f[i - j] + 1);
+                    println!("    回文: '{}' (索引 {}-{})",
+                        String::from_utf8_lossy(&s[i - j..i + j + 1]),
+                        i - j, i + j
+                    );
+                    println!("    更新 f[{}]: min({}, {}) = {}", i + j + 1, f[i + j + 1], f[i - j] + 1, f[i + j + 1]);
+                } else {
+                    println!("    终止扩展: '{}' ≠ '{}'", s[i - j] as char, s[i + j] as char);
+                    break;
+                }
+            }
+
+            println!("  f 状态: {:?}", f);
+        }
+
+        println!("\n最终 f: {:?}", f);
+        f[n] - 1
+    }
+}
+
+//1278分割回文串 III
+impl Solution {
+    pub fn palindrome_partition(s: String, k: i32) -> i32 {
+        
+        0
+    }
+}
+
+//3305 元音辅音字符串计数 I
+use std::collections::HashSet;
+impl Solution {
+    pub fn count_of_substrings(word: String, k: i32) -> i32 {
+        let vowels = HashSet::from(['a', 'e', 'i', 'o', 'u']);
+        let n = word.len();
+        let mut res = 0;
+        for i in 0..n {
+            let mut occur = HashSet::new();
+            let mut consonants = 0;
+            for j in i..n {
+                if vowels.contains(&word[j..j+1].chars().next().unwrap()) {
+                    occur.insert(word[j..j+1].chars().next().unwrap());
+                } else {
+                    consonants += 1;
+                }
+                if occur.len() == 5 && consonants == k {
+                    res += 1;
+                }
+            }
+        }
+        res
+    }
+
+    //滑动窗口
+    pub fn count_of_substrings2(word: String, k: i32) -> i64 {
+        let vowels: HashSet<char> = ['a', 'e', 'i', 'o', 'u'].iter().cloned().collect();
+        fn count(word: &str, k: i32, vowels: &HashSet<char>) -> i64 {
+            let n = word.len();
+            let mut res = 0;
+            let mut consonants = 0;
+            let mut occur: HashMap<char, i32> = HashMap::new();
+            let mut j = 0;
+            let word_chars: Vec<char> = word.chars().collect();
+            for i in 0..n {
+                while j < n && (consonants < k || occur.len() < 5) {
+                    let ch = word_chars[j];
+                    if vowels.contains(&ch) {
+                        *occur.entry(ch).or_insert(0) += 1;
+                    } else {
+                        consonants += 1;
+                    }
+                    j += 1;
+                }
+                if consonants >= k && occur.len() == 5 {
+                    res += (n - j + 1) as i64;
+                }
+                let left = word_chars[i];
+                if vowels.contains(&left) {
+                    if let Some(count) = occur.get_mut(&left) {
+                        *count -= 1;
+                        if *count == 0 {
+                            occur.remove(&left);
+                        }
+                    }
+                } else {
+                    consonants -= 1;
+                }
+            }
+            res
+        }
+        count(&word, k, &vowels) - count(&word, k + 1, &vowels)
+    }
+}
+
+//字符串处理，域名按数字合并。 tokyo001, shanghai06, shanghai03, shanghai04, shanghai02, 合并得到shanghai02-04,shanghai06,tokyo001 
+
+impl Solution {
+    pub fn test_fei_tu(inputs: Vec<&str>) -> Vec<String> {
+        let mut ans = Vec::new();
+        let mut hash = HashMap::new();
+        for input in inputs {
+            let mut tmp = input.as_bytes();
+            for i in 0..tmp.len() {
+                if tmp[i] >= b'0' && tmp[i] <= b'9' {
+                    let name = String::from_utf8_lossy(&tmp[0..i]).to_string();
+                    let num = String::from_utf8_lossy(&tmp[i..tmp.len()]).to_string();
+                    hash.entry(name).or_insert(vec![]).push(num);
+                    break;
+                }
+            }
+        }
+        for (k,v) in hash.iter(){
+            println!("k:{},v:{:?}",k,v);
+            let mut tmp = String::new();
+            let mut tmp_v = v.clone();
+            tmp_v.sort();
+            println!("tmp_v:{:?}", tmp_v);
+            let mut tmp_num = tmp_v[0].to_string().parse::<i32>().unwrap();
+            let mut j = 0;
+            for input in tmp_v.iter(){
+                if j % 2 == 0 {
+                    tmp_num = input.to_string().parse::<i32>().unwrap();
+                    tmp += &format!("{}",input);
+                    j+=1;
+                }
+                else {
+                    let tmp_cur = input.to_string().parse::<i32>().unwrap();
+                    if tmp_cur - tmp_num != 1 {
+                        tmp += &format!("-{}",input);
+                        j+=1;
+                        ans.push(format!("{}{}",k,tmp));
+                        tmp.clear();
+                    }
+                    tmp_num = tmp_cur;
+                }
+            }
+            ans.push(format!("{}{}",k,tmp));
+        }
+        println!("ans:{:?}", ans);
+        ans
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use core::f32;
+    use core::{f32, panic};
     use std::u64;
 
     use super::*;
+
+    
+    #[test]
+    fn test_feitu() {
+        let s = vec!["shanghai01", "shanghai02", "shanghai04", "shanghai03"];
+        let rusult = Solution::test_fei_tu(s);
+        panic!();
+    }
+
+    #[test]
+    fn test_132() {
+        let s = "abcba";
+        let rusult = Solution::min_cut3(s.to_string());
+    }
+
+    #[test]
+    fn test_131() {
+        let s = "aab";
+        let rusult = Solution::partition(s.to_string());
+    }
+
+    #[test]
+    fn test_2353() {
+        let mut food_ratings = FoodRatings::new(
+            vec!["kimchi".to_string(), "miso".to_string(), "sushi".to_string(), "moussaka".to_string(), "ramen".to_string(), "bulgogi".to_string()],
+            vec!["korean".to_string(), "japanese".to_string(), "japanese".to_string(), "greek".to_string(), "japanese".to_string(), "korean".to_string()],
+            vec![9, 12, 8, 15, 14, 7]
+        );
+
+        // Test highestRated for "korean"
+        assert_eq!(food_ratings.highest_rated("korean".to_string()), "kimchi");
+
+        // Test highestRated for "japanese"
+        assert_eq!(food_ratings.highest_rated("japanese".to_string()), "ramen");
+
+        // Change rating for "sushi"
+        food_ratings.change_rating("sushi".to_string(), 16);
+
+        // Test highestRated for "japanese" after rating change
+        assert_eq!(food_ratings.highest_rated("japanese".to_string()), "sushi");
+
+        // Change rating for "ramen"
+        food_ratings.change_rating("ramen".to_string(), 16);
+
+        // Test highestRated for "japanese" after both ratings are equal
+        assert_eq!(food_ratings.highest_rated("japanese".to_string()), "ramen");
+    }
 
     #[test]
     fn test_2296() {

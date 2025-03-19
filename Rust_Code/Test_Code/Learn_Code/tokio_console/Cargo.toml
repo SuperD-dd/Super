@@ -1,0 +1,15 @@
+[package]
+name = "tokio_console"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.15", features = ["full", "tracing"] }
+tokio-console = "0.1"
+tracing = "0.1"
+console-subscriber = "0.4.1"
+tracing-subscriber = "0.3.19"
+
+[build]
+rustflags = ["--cfg", "tokio_unstable"]
+
