@@ -1764,47 +1764,75 @@ impl Solution {
 impl Solution {
     pub fn test_fei_tu(inputs: Vec<&str>) -> Vec<String> {
         let mut ans = Vec::new();
-        let mut hash = HashMap::new();
+        let mut hash: HashMap<String, Vec<i32>> = HashMap::new();
+
         for input in inputs {
-            let mut tmp = input.as_bytes();
-            for i in 0..tmp.len() {
-                if tmp[i] >= b'0' && tmp[i] <= b'9' {
-                    let name = String::from_utf8_lossy(&tmp[0..i]).to_string();
-                    let num = String::from_utf8_lossy(&tmp[i..tmp.len()]).to_string();
-                    hash.entry(name).or_insert(vec![]).push(num);
-                    break;
+            let mut name = String::new();
+            let mut num_str = String::new();
+
+            for c in input.chars() {
+                if c.is_numeric() {
+                    num_str.push(c);
+                } else {
+                    name.push(c);
                 }
             }
-        }
-        for (k,v) in hash.iter(){
-            println!("k:{},v:{:?}",k,v);
-            let mut tmp = String::new();
-            let mut tmp_v = v.clone();
-            tmp_v.sort();
-            println!("tmp_v:{:?}", tmp_v);
-            let mut tmp_num = tmp_v[0].to_string().parse::<i32>().unwrap();
-            let mut j = 0;
-            for input in tmp_v.iter(){
-                if j % 2 == 0 {
-                    tmp_num = input.to_string().parse::<i32>().unwrap();
-                    tmp += &format!("{}",input);
-                    j+=1;
-                }
-                else {
-                    let tmp_cur = input.to_string().parse::<i32>().unwrap();
-                    if tmp_cur - tmp_num != 1 {
-                        tmp += &format!("-{}",input);
-                        j+=1;
-                        ans.push(format!("{}{}",k,tmp));
-                        tmp.clear();
-                    }
-                    tmp_num = tmp_cur;
-                }
+
+            if let Ok(num) = num_str.parse::<i32>() {
+                hash.entry(name).or_insert(vec![]).push(num);
             }
-            ans.push(format!("{}{}",k,tmp));
         }
-        println!("ans:{:?}", ans);
+
+        for (name, mut nums) in hash {
+            nums.sort();
+
+            let mut i = 0;
+            let mut parts = Vec::new();
+
+            while i < nums.len() {
+                let start = nums[i];
+                let mut end = start;
+
+                while i + 1 < nums.len() && nums[i + 1] == end + 1 {
+                    i += 1;
+                    end = nums[i];
+                }
+
+                if start == end {
+                    parts.push(format!("{}{:03}", name, start));
+                } else {
+                    parts.push(format!("{}{:03}-{:03}", name, start, end));
+                }
+
+                i += 1;
+            }
+
+            ans.extend(parts);
+        }
+
+        ans.sort();
+        println!("{:?}", ans);
         ans
+    }
+}
+
+//2278. 字母在字符串中的百分比
+impl Solution {
+    pub fn percentage_letter(s: String, letter: char) -> i32 {
+        let mut ans = 0;
+        for i in s.chars() {
+            if i == letter {
+                ans += 1;
+            }
+        }
+        ans * 100 / s.len() as i32
+    }
+}
+
+impl Solution {
+    pub fn test_code() -> i32 {
+        todo!()
+
     }
 }
 
@@ -1815,13 +1843,12 @@ mod tests {
 
     use super::*;
 
-    
     #[test]
-    fn test_feitu() {
-        let s = vec!["shanghai01", "shanghai02", "shanghai04", "shanghai03"];
-        let rusult = Solution::test_fei_tu(s);
-        panic!();
+    fn test_code() {
+        let s = "abcba";
+        let rusult = Solution::test_code();
     }
+
 
     #[test]
     fn test_132() {
@@ -1914,6 +1941,13 @@ mod tests {
         let s = vec![2, 1, 8];
         let result = Solution::minimum_subarray_length(s, 10);
         assert_eq!(result, 3);
+    }
+
+    #[test]
+    fn test_feitu() {
+        let s = vec!["shanghai01", "shanghai02", "shanghai04", "shanghai03", "hangzhou03", "hangzhou01"];
+        let rusult = Solution::test_fei_tu(s);
+        panic!();
     }
 
     #[test]

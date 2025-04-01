@@ -1,0 +1,82 @@
+2025-03-20T20:18:41.941+0800	INFO	test_http_server	Starting Actix Web server...
+2025-03-20T20:18:41.944+0800	INFO	actix_server::builder	starting 12 workers
+2025-03-20T20:18:41.944+0800	INFO	actix_server::server	Actix runtime found; starting in Actix runtime
+2025-03-20T20:18:41.944+0800	INFO	actix_server::server	starting service: "actix-web-service-127.0.0.1:8080", workers: 12, listening on: 127.0.0.1:8080
+2025-03-20T20:18:52.937+0800	INFO	actix_server::server	SIGINT received; starting forced shutdown
+2025-03-20T20:18:52.937+0800	INFO	actix_server::accept	accept thread stopped
+2025-03-20T20:18:52.938+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.938+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.946+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.946+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.946+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.946+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.946+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.946+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.946+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.946+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.946+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:18:52.946+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:34.093+0800	INFO	test_http_server	Starting Actix Web server...
+2025-03-20T20:25:34.095+0800	INFO	actix_server::builder	starting 12 workers
+2025-03-20T20:25:34.096+0800	INFO	actix_server::server	Actix runtime found; starting in Actix runtime
+2025-03-20T20:25:34.096+0800	INFO	actix_server::server	starting service: "actix-web-service-127.0.0.1:8080", workers: 12, listening on: 127.0.0.1:8080
+2025-03-20T20:25:53.191+0800	INFO	actix_server::server	SIGINT received; starting forced shutdown
+2025-03-20T20:25:53.191+0800	INFO	actix_server::accept	accept thread stopped
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.191+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:25:53.192+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:03.443+0800	INFO	test_http_server	database_url:postgres://user:password@localhost/dbname
+2025-03-20T20:26:03.444+0800	INFO	test_http_server	http_port:8080
+2025-03-20T20:26:03.444+0800	INFO	test_http_server	log4rs_config:log4rs.yaml
+2025-03-20T20:26:03.444+0800	INFO	test_http_server	initial_log_level:info
+2025-03-20T20:26:03.444+0800	INFO	test_http_server	Starting Actix Web server...
+2025-03-20T20:26:03.446+0800	INFO	actix_server::builder	starting 12 workers
+2025-03-20T20:26:03.446+0800	INFO	actix_server::server	Actix runtime found; starting in Actix runtime
+2025-03-20T20:26:03.446+0800	INFO	actix_server::server	starting service: "actix-web-service-127.0.0.1:8080", workers: 12, listening on: 127.0.0.1:8080
+2025-03-20T20:26:11.444+0800	INFO	actix_server::server	SIGINT received; starting forced shutdown
+2025-03-20T20:26:11.445+0800	INFO	actix_server::accept	accept thread stopped
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:26:11.445+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:34:50.496+0800	INFO	test_http_server	database_url:postgres://user:password@localhost/dbname
+2025-03-20T20:34:50.497+0800	INFO	test_http_server	http_port:8080
+2025-03-20T20:34:50.497+0800	INFO	test_http_server	log4rs_config:log4rs.yaml
+2025-03-20T20:34:50.497+0800	INFO	test_http_server	initial_log_level:info
+2025-03-20T20:34:50.497+0800	INFO	test_http_server	_log_level:INFO
+2025-03-20T20:34:50.497+0800	INFO	test_http_server	Starting Actix Web server...
+2025-03-20T20:34:50.499+0800	INFO	actix_server::builder	starting 12 workers
+2025-03-20T20:34:50.499+0800	INFO	actix_server::server	Actix runtime found; starting in Actix runtime
+2025-03-20T20:34:50.499+0800	INFO	actix_server::server	starting service: "actix-web-service-127.0.0.1:8080", workers: 12, listening on: 127.0.0.1:8080
+2025-03-20T20:35:35.128+0800	INFO	test_http_server	CPU usage: 0.026889329181998267
+2025-03-20T20:37:08.576+0800	INFO	actix_server::server	SIGINT received; starting forced shutdown
+2025-03-20T20:37:08.577+0800	INFO	actix_server::accept	accept thread stopped
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
+2025-03-20T20:37:08.577+0800	INFO	actix_server::worker	shutting down idle worker
